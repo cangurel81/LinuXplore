@@ -25,7 +25,9 @@ pip install -r requirements.txt
 python main.py
 ```
 
-Requires Python 3.10+ and Flet 0.28.3 (pinned in `requirements.txt`).
+Requires Python 3.10+ and Flet 0.28.3 (pinned in `requirements.txt`). The plain `flet`
+package does not ship the desktop client, which is why `requirements.txt` asks for
+`flet[desktop]` — without it `python main.py` starts a server and never opens a window.
 
 ## What it does
 
@@ -45,7 +47,6 @@ your browser, so you always get the current image from the project's own servers
 ```
 LinuXplore/
 ├── main.py                  # window setup and app start
-├── LinuXplore.spec          # PyInstaller build definition
 ├── requirements.txt
 ├── linux.ico / linux.png
 ├── src/
@@ -91,17 +92,29 @@ python tools/check_links.py          # plain report
 python tools/check_links.py --json   # machine-readable
 ```
 
-Exit code is `0` when every URL answers with 2xx/3xx, `1` otherwise.
+Every URL is classified as `ok` (2xx/3xx), `engelli` (401/403/429 — bot protection, opens
+fine in a browser), `kirik` (404/410/5xx — really dead, must be fixed) or `ulasilamadi`
+(network/TLS error). The exit code is `0` unless a `kirik` link exists, so bot-protected
+and temporarily unreachable sites do not fail a CI run.
 
 ## Building the exe
 
+Build with `flet pack` instead of calling PyInstaller directly: it injects Flet's own
+PyInstaller hook (`flet_cli/__pyinstaller/hook-flet.py`) and bundles the desktop client.
+A hand-written `.spec` without that hookpath produces an exe that starts and shows a blank
+window.
+
 ```bash
-pip install pyinstaller
-pyinstaller LinuXplore.spec --noconfirm --clean
+pip install "flet[all]==0.28.3" pyinstaller
+flet pack main.py -n LinuXplore -i linux.ico -y \
+  --add-data "src/data/distros.json;src/data" \
+  --add-data "src/data/locales.json;src/data" \
+  --add-data "linux.ico;." \
+  --add-data "linux.png;."
 ```
 
-Output: `dist/LinuXplore.exe`. The spec bundles `src/data/*.json` and the icon; without
-those entries the packaged app starts with an empty grid.
+Output: `dist/LinuXplore.exe` (about 83 MB, single file). The `--add-data` entries are
+mandatory — without the JSON files the packaged app starts with an empty grid.
 
 ## License
 
