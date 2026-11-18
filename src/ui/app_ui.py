@@ -50,6 +50,8 @@ class LinuXploreApp(ft.Row):
         self.expand = True
         self.spacing = 0
         self._page = page
+        # Kontrol sayfaya eklenene kadar page.update() çağırmıyoruz.
+        self._mounted = False
         self.language = "TR"
         self.locales = read_json("locales.json", {})
         self.selected_category = catalog.ALL_CATEGORIES
@@ -63,7 +65,12 @@ class LinuXploreApp(ft.Row):
             self.distros = []
             self.load_error = str(error)
 
-        self.build()
+        self.build_ui()
+
+    def mount(self):
+        """Sayfaya eklendikten sonra çağrılır: ilk çizimi yapar."""
+        self._mounted = True
+        self._page.update()
 
     # ------------------------------------------------------------------ dil
 
@@ -77,7 +84,13 @@ class LinuXploreApp(ft.Row):
 
     # --------------------------------------------------------------- iskelet
 
-    def build(self):
+    def build_ui(self):
+        """Arayüzü kurar.
+
+        DİKKAT: bu metodun adı `build` olamaz. `ft.Control.build()` Flet'in kendi
+        kancasıdır; ezip geçince Flet kontrolü sayfaya eklerken bu metodu tekrar
+        çağırıyor ve pencere boş kalıyor.
+        """
         self.search_field = ft.TextField(
             hint_text=self.t("search_hint"),
             prefix_icon=ft.Icons.SEARCH,
@@ -371,7 +384,8 @@ class LinuXploreApp(ft.Row):
         self.grid.controls = [self.make_card(distro) for distro in distros]
         self.results_box.content = self.grid if distros else self.build_empty_view()
         self.count_text.value = self.t("results").replace("{count}", str(len(distros)))
-        self._page.update()
+        if self._mounted:
+            self._page.update()
 
     # ------------------------------------------------------------- etkileşim
 

@@ -38,8 +38,11 @@ def main(page: ft.Page):
     if icon:
         page.window.icon = icon
 
-    page.add(LinuXploreApp(page))
-    page.update()
+    app = LinuXploreApp(page)
+    page.add(app)
+    # Kontrol sayfaya eklendikten sonra ilk çizimi yap.
+    # (Eklenmeden önce page.update() çağırmak Flet 0.28'de kilitlenmeye yol açıyor.)
+    app.mount()
 
 
 if __name__ == "__main__":

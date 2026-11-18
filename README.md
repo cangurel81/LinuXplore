@@ -55,11 +55,27 @@ LinuXplore/
 │   └── data/
 │       ├── distros.json     # 69 records, single source of truth
 │       └── locales.json     # TR/EN strings
+├── tests/test_ui_contract.py # Flet contract + catalog regression tests
 └── tools/check_links.py     # developer script: verify catalog URLs
 ```
 
 `src/logic/catalog.py` has no Flet dependency, so the data layer can be tested or
 reused on its own.
+
+## Tests
+
+```bash
+python tests/test_ui_contract.py
+```
+
+Nine dependency-free checks (no pytest needed). They guard the two Flet traps that
+make the window render **silently blank** with no traceback:
+
+- **Never name a method `build`.** `ft.Control.build()` is a Flet hook; overriding it
+  makes Flet call your method again while mounting the control, and the window stays
+  empty. The UI is built in `build_ui()` and drawn from `mount()` instead.
+- **Never call `page.update()` before the control is added.** The constructor does not
+  touch the page; `main.py` calls `app.mount()` after `page.add(app)`.
 
 ## Adding a distribution
 
